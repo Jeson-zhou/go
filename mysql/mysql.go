@@ -10,8 +10,8 @@ import (
 var db *sql.DB
 
 type user struct {
-	id int
-	age int
+	id   int
+	age  int
 	name string
 }
 
@@ -139,7 +139,6 @@ func QueryRow() {
 	}
 	fmt.Printf("id: %d name: %s age: %d\n", u.id, u.name, u.age)
 }
-
 
 // 使用MySQL驱动
 func initDB() (err error) {
