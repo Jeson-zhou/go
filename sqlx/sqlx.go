@@ -21,7 +21,7 @@ type User struct {
 	Age  int
 }
 
-// 使用sqlx.in实现批量插入，前提需要我们的结构体实现driver.Value接口
+// Value 使用sqlx.in实现批量插入，前提需要我们的结构体实现driver.Value接口
 func (u User) Value() (driver.Value, error) {
 	return []interface{}{u.Name, u.Age}, nil
 }
