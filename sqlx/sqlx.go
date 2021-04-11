@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -12,6 +14,77 @@ type user struct {
 	Id   int
 	Name string
 	Age  int
+}
+
+type User struct {
+	Name string
+	Age  int
+}
+
+// 使用sqlx.in实现批量插入，前提需要我们的结构体实现driver.Value接口
+func (u User) Value() (driver.Value, error) {
+	return []interface{}{u.Name, u.Age}, nil
+}
+
+func BatchInsertUsers2(users []interface{}) error {
+	sqlStr := "insert into user(name, age) values(?), (?), (?)"
+	queryStr, args, _ := sqlx.In(sqlStr, users...)
+	fmt.Println(queryStr)
+	fmt.Println(args)
+	_, err := db.Exec(queryStr, args...)
+	return err
+}
+
+// sqlx 事务操作
+func transactionDemo2() (err error) {
+	// 开启事务
+	tx, err := db.Beginx()
+	if err != nil {
+		fmt.Printf("Begin trans failed, err: %v\n", err)
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			fmt.Println("31: Rollback...")
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+			if err != nil {
+				fmt.Printf("Rollback failed, err: %v\n", err)
+				panic(err)
+			}
+			fmt.Println("Commit success...")
+		}
+	}()
+	sqlStr1 := "Update user set age = 3 0 where id = ?"
+	ret, err := db.Exec(sqlStr1, 1)
+	if err != nil {
+		return err
+	}
+	n, err := ret.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("exec sqlStr1 failed")
+	}
+
+	sqlStr2 := "Update user set age = 50 where id = ?"
+	ret, err = db.Exec(sqlStr2, 2)
+	if err != nil {
+		return err
+	}
+	n, err = ret.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("exec sqlStr2 failed")
+	}
+	return nil
 }
 
 //DB.NamedQuery
@@ -173,4 +246,11 @@ func main() {
 	deleteRowDemo()
 	insertUserDemo()
 	namedQuery()
+	transactionDemo2()
+	fmt.Println("--------")
+	u1 := User{Name: "x", Age: 1}
+	u2 := User{Name: "xx", Age: 2}
+	u3 := User{Name: "xxx", Age: 3}
+	user2 := []interface{}{u1, u2, u3}
+	BatchInsertUsers2(user2)
 }
