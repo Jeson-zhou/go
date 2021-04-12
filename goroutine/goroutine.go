@@ -69,7 +69,7 @@ func consumer(ch chan int, count int) {
 
 func main() {
 	ch := make(chan int)
-	count := 5
+	count := 8
 	go producer(ch, count)
 	consumer(ch, count)
 }
