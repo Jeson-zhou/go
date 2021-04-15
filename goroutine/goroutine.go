@@ -1,7 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"io"
+	"log"
+	"net"
 	"time"
 )
 
@@ -48,7 +50,7 @@ func main() {
 }*/
 
 // goroutine 实现同步
-func producer(ch chan int, count int) {
+/*func producer(ch chan int, count int) {
 	for i := 1; i <= count; i++ {
 		fmt.Printf("大妈做的第%d个面包\n", i)
 		ch <- i
@@ -72,4 +74,56 @@ func main() {
 	count := 5
 	go producer(ch, count)
 	consumer(ch, count)
+}
+*/
+
+// goroutine 并行计算
+/*func spinner(delay time.Duration) {
+	for {
+		for _, r := range "abcdefg" {
+			fmt.Printf("\r%c", r)
+			time.Sleep(delay)
+		}
+	}
+}
+
+func fib(x int) int {
+	if x < 2 {
+		return x
+	}
+	return fib(x - 1) + fib(x - 2)
+}
+
+func main() {
+	go spinner(100 * time.Microsecond)
+	const n = 45
+	fibN := fib(n)
+	fmt.Printf("\nFibonacci(%d) = %d\n", n, fibN)
+}*/
+
+// 并发的clock服务
+func main() {
+	listener, err := net.Listen("tcp", "127.0.0.1:8000")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		go handleConn(conn)
+	}
+}
+
+func handleConn(c net.Conn) {
+	defer c.Close()
+	for {
+		_, err := io.WriteString(c, time.Now().Format("15:04:05\n"))
+		if err != nil {
+			return
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
